@@ -4,10 +4,15 @@ runtime: python27
 api_version: 1
 threadsafe: true
 
-libraries:
-- name: webapp2
-  version: latest
-
 handlers:
+- url: /js
+  static_dir: js
+
+- url: /css
+  static_dir: css
+
+- url: /imgs
+  static_dir: imgs
+
 - url: /.*
   script: guestbook.application

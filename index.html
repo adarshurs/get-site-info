@@ -1,9 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
-  <body>
-    <form action="/sign" method="post">
-      <title>Hello World Page</title>
-      <div><textarea name="content" rows="3" cols="60"></textarea></div>
-      <div><input type="submit" value="Sign Guestbook"></div>
-    </form>
-  </body>
+<title>Get Site Info</title>
+<style type="text/css">
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        background-color: #f0f0f0;
+    }
+
+    .processing {
+        position: absolute;
+        background-color: rgba(0,0,0,0.6);
+        height: 100%;
+        width: 100%;
+        display: table-cell;
+        vertical-align: middle;
+        z-index: 100;
+    }
+
+    .processimgcont {
+        height: 40px;
+        width: 220px;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 20%;
+        background: transparent;
+    }
+</style>
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<script type="text/javascript" src="js/jquery-2.0.3.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        $("#editcontentpanel").hide();
+        $("#urlbox").keyup(function (e) {
+            if (e.which == 13) {
+                //console.log("What?");
+                sendRequest();
+            };
+        });
+
+        $("#validate").click(function () {
+            sendRequest();
+        });
+
+        var sendRequest = function () {
+            var temp = $("#urlbox").val();
+            console.log(temp);
+            var regEx = new RegExp(/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/)
+            if (temp != null && temp.match(regEx)) {
+                console.log(temp);
+                $.ajax({
+                    url: '/getdata',
+                    type: 'POST',
+                    data: { website: temp },
+                    beforeSend: function () {
+                        $('.processing').removeClass("hide");
+                    },
+                    success: function (data) {
+                        //console.log(data);
+                        data = JSON.parse(data);
+                        if (data.Error != "Error Occurd!") {
+                            $("#editcontentpanel").show();
+                            $("#domain").val(data.url);
+                            $("#title_edit").val(data.title)
+                            $("#keywords_edit").val(data.keywords)
+                            $("#description_edit").val(data.description)
+                        }
+
+                        else {
+                            alert("Error Occurred!, Please try different url");
+                        }
+                    },
+                    error: function () {
+                        alert("Error Occurred!");
+                        //console.log("Error!");
+                    },
+
+                    complete: function () {
+                        $('urlbox').text('');
+                        $('.processing').addClass("hide");
+                    }
+                })
+            }
+            else {
+                // console.log("Failed!");
+                alert("Invalid Url")
+            };
+
+        }
+
+    });
+</script>
+<body style="background-color:#f0f0f0">
+    <div class="processing hide">
+        <div class="processimgcont">
+            <img style="text-align:center;" src="imgs/processing.gif">
+        </div>
+    </div>
+
+
+    <div class="container" style="height:100%;background-color:#fff;">
+        <div class="row">
+            <div class="col-md-offset-4 col-md-5">
+                <h3 style="margin-left:50px;">Enter any url to scrape</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-offset-3 col-md-6">
+                <div class="form-group">
+                    <div class="col-md-10">
+                        <input id="urlbox" name="websiteurl" class="form-control">
+                    </div>
+                    <input id="validate" class="btn btn-primary" style="display:inherit;" type="submit" value="submit">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <hr>
+        </div>
+        <div id="editcontentpanel" class="row">
+            <div class="col-md-12">
+                <form class="form-horizontal" action="/sign" method="post" role="form">
+                    <div class="form-group">
+                        <label class="col-md-1 control-label">Url</label>
+                        <div class="col-md-11">
+                            <input class="form-control" name="domain" id="domain">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-1 control-label">Title</label>
+                        <div class="col-md-11">
+                            <input type="text" class="form-control" name="title" id="title_edit">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-1 control-label">Keywords</label>
+                        <div class="col-md-11">
+                            <textarea type="text" class="form-control" name="keywords" id="keywords_edit"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-md-1 control-label">Description</label>
+                        <div class="col-md-11">
+                            <textarea class="form-control" name="description" id="description_edit"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-offset-11 col-md-1">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% if websites %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">Previously scraped websites</div>
+                    <table class="table table-bordered table-condensed">
+                        <tr>
+                            <th>Website</th>
+                            <th class="col-md-2">Title</th>
+                            <th class="col-md-4">Keywords</th>
+                            <th class="col-md-5">Description</th>
+                        </tr>
+                        {% for website in websites %}
+                        <tr>
+                            <td>{{website.url}}</td>
+                            <td>{{website.title}}</td>
+                            <td>{{website.keywords}}</td>
+                            <td>{{website.description}}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <form action="/delete" method="post">
+                <div class="col-md-offset-10 col-md-1">
+                    <button id="delete" type="submit" class="btn btn-primary">Delete All</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+</body>
 </html>
